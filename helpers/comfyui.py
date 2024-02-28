@@ -214,7 +214,7 @@ class ComfyUI:
             else:
                 continue
 
-    def load_workflow(self, workflow):
+    def load_workflow(self, workflow, check_inputs=True):
         if not isinstance(workflow, dict):
             wf = json.loads(workflow)
         else:
@@ -228,7 +228,8 @@ class ComfyUI:
             )
 
         self.handle_known_unsupported_nodes(wf)
-        self.handle_inputs(wf)
+        if check_inputs:
+            self.handle_inputs(wf)
         self.handle_weights(wf)
         return wf
 

@@ -1,7 +1,7 @@
 import os
 import shutil
-import tarfile
-import zipfile
+import random
+import json
 from typing import List
 from cog import BasePredictor, Input, Path
 from helpers.comfyui import ComfyUI
@@ -10,14 +10,15 @@ OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
 
-with open("examples/api_workflows/sdxl_simple_example.json", "r") as file:
-    EXAMPLE_WORKFLOW_JSON = file.read()
+with open("face-to-sticker-api.json", "r") as file:
+    workflow_json = file.read()
 
 
 class Predictor(BasePredictor):
     def setup(self):
         self.comfyUI = ComfyUI("127.0.0.1:8188")
         self.comfyUI.start_server(OUTPUT_DIR, INPUT_DIR)
+        self.comfyUI.load_workflow(workflow_json, False)
 
     def cleanup(self):
         self.comfyUI.clear_queue()
@@ -28,21 +29,13 @@ class Predictor(BasePredictor):
 
     def handle_input_file(self, input_file: Path):
         file_extension = os.path.splitext(input_file)[1]
-        if file_extension == ".tar":
-            with tarfile.open(input_file, "r") as tar:
-                tar.extractall(INPUT_DIR)
-        elif file_extension == ".zip":
-            with zipfile.ZipFile(input_file, "r") as zip_ref:
-                zip_ref.extractall(INPUT_DIR)
-        elif file_extension in [".jpg", ".jpeg", ".png", ".webp"]:
-            shutil.copy(input_file, os.path.join(INPUT_DIR, f"input{file_extension}"))
+        if file_extension in [".jpg", ".jpeg", ".png", ".webp"]:
+            filename = f"input{file_extension}"
+            shutil.copy(input_file, os.path.join(INPUT_DIR, filename))
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
-        print("====================================")
-        print(f"Inputs uploaded to {INPUT_DIR}:")
-        self.log_and_collect_files(INPUT_DIR)
-        print("====================================")
+        return filename
 
     def log_and_collect_files(self, directory, prefix=""):
         files = []
@@ -58,46 +51,108 @@ class Predictor(BasePredictor):
                 files.extend(self.log_and_collect_files(path, prefix=f"{prefix}{f}/"))
         return files
 
+    def update_workflow(self, workflow, **kwargs):
+        loader = workflow["2"]["inputs"]
+        sampler = workflow["4"]["inputs"]
+        load_image = workflow["22"]["inputs"]
+        upscaler = workflow["11"]["inputs"]
+        instant_id = workflow["41"]["inputs"]
+        ip_adapter = workflow["43"]["inputs"]
+
+        load_image["image"] = kwargs["filename"]
+
+        loader["cfg"] = kwargs["prompt_strength"]
+        loader["seed"] = kwargs["seed"]
+        loader[
+            "positive"
+        ] = f"Sticker, {kwargs['prompt']}, cel shaded, svg, vector art, sharp"
+        loader[
+            "negative"
+        ] = f"photo, photography, nsfw, nude, ugly, broken, watermark, oversaturated, soft {kwargs['negative_prompt']}"
+        loader["width"] = kwargs["width"]
+        loader["height"] = kwargs["height"]
+
+        instant_id["weight"] = kwargs["instant_id_strength"]
+
+        ip_adapter["weight"] = kwargs["ip_adapter_weight"]
+        ip_adapter["noise"] = kwargs["ip_adapter_noise"]
+
+        sampler["steps"] = kwargs["steps"]
+        sampler["seed"] = kwargs["seed"]
+        upscaler["seed"] = kwargs["seed"]
+
     def predict(
         self,
-        workflow_json: str = Input(
-            description="Your ComfyUI workflow as JSON. You must use the API version of your workflow. Get it from ComfyUI using ‘Save (API format)’. Instructions here: https://github.com/fofr/cog-comfyui",
-            default="",
-        ),
-        input_file: Path = Input(
-            description="Input image, tar or zip file. Read guidance on workflows and input files here: https://github.com/fofr/cog-comfyui. Alternatively, you can replace inputs with URLs in your JSON workflow and the model will download them.",
+        image: Path = Input(
+            description="An image of a person to be converted to a sticker",
             default=None,
         ),
-        return_temp_files: bool = Input(
-            description="Return any temporary files, such as preprocessed controlnet images. Useful for debugging.",
-            default=False,
+        prompt: str = Input(default="a person"),
+        negative_prompt: str = Input(
+            default="",
+            description="Things you do not want in the image",
         ),
-        randomise_seeds: bool = Input(
-            description="Automatically randomise seeds (seed, noise_seed, rand_seed)",
-            default=True,
+        width: int = Input(default=1024),
+        height: int = Input(default=1024),
+        steps: int = Input(default=20),
+        seed: int = Input(
+            default=None, description="Fix the random seed for reproducibility"
+        ),
+        prompt_strength: float = Input(
+            default="7",
+            description="Strength of the prompt. This is the CFG scale, higher numbers lead to stronger prompt, lower numbers will keep more of a likeness to the original.",
+        ),
+        instant_id_strength: float = Input(
+            default="1", description="How strong the InstantID will be.", ge=0, le=1
+        ),
+        ip_adapter_weight: float = Input(
+            default="0.2",
+            description="How much the IP adapter will influence the image",
+            ge=0,
+            le=1,
+        ),
+        ip_adapter_noise: float = Input(
+            default="0.5",
+            description="How much noise is added to the IP adapter input",
+            ge=0,
+            le=1,
+        ),
+        upscale: bool = Input(default=True, description="2x upscale the sticker"),
+        upscale_steps: int = Input(
+            default=10, description="Number of steps to upscale"
         ),
     ) -> List[Path]:
         """Run a single prediction on the model"""
         self.cleanup()
+        filename = self.handle_input_file(image)
 
-        if input_file:
-            self.handle_input_file(input_file)
+        if seed is None:
+            seed = random.randint(0, 2**32 - 1)
+            print(f"Random seed set to: {seed}")
 
-        # TODO: Record the previous models loaded
-        # If different, run /free to free up models and memory
-
-        wf = self.comfyUI.load_workflow(workflow_json or EXAMPLE_WORKFLOW_JSON)
-
-        if randomise_seeds:
-            self.comfyUI.randomise_seeds(wf)
+        workflow = json.loads(workflow_json)
+        self.update_workflow(
+            workflow,
+            filename=filename,
+            seed=seed,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            width=width,
+            height=height,
+            steps=steps,
+            upscale=upscale,
+            upscale_steps=upscale_steps,
+            prompt_strength=prompt_strength,
+            instant_id_strength=instant_id_strength,
+            ip_adapter_weight=ip_adapter_weight,
+            ip_adapter_noise=ip_adapter_noise,
+        )
 
         self.comfyUI.connect()
-        self.comfyUI.run_workflow(wf)
+        self.comfyUI.run_workflow(workflow)
 
         files = []
         output_directories = [OUTPUT_DIR]
-        if return_temp_files:
-            output_directories.append(COMFYUI_TEMP_OUTPUT_DIR)
 
         for directory in output_directories:
             print(f"Contents of {directory}:")
