@@ -4,9 +4,7 @@ import os
 import json
 
 from helpers.ComfyUI_Controlnet_Aux import ComfyUI_Controlnet_Aux
-from helpers.ComfyUI_AnimateDiff_Evolved import ComfyUI_AnimateDiff_Evolved
 from helpers.ComfyUI_BRIA_AI_RMBG import ComfyUI_BRIA_AI_RMBG
-from helpers.WAS_Node_Suite import WAS_Node_Suite
 
 UPDATED_WEIGHTS_MANIFEST_URL = f"https://weights.replicate.delivery/default/comfy-ui/weights.json?cache_bypass={int(time.time())}"
 UPDATED_WEIGHTS_MANIFEST_PATH = "updated_weights.json"
@@ -86,8 +84,6 @@ class WeightsManifest:
                     self._generate_weights_map(self.weights_manifest[key], key.lower())
                 )
         weights_map.update(ComfyUI_Controlnet_Aux.weights_map(BASE_URL))
-        weights_map.update(ComfyUI_AnimateDiff_Evolved.weights_map(BASE_URL))
-        weights_map.update(WAS_Node_Suite.weights_map(BASE_URL))
         weights_map.update(ComfyUI_BRIA_AI_RMBG.weights_map(BASE_URL))
 
         print("Allowed weights:")
@@ -115,42 +111,3 @@ class WeightsManifest:
 
     def is_non_commercial_only(self, weight_str):
         return weight_str in self.non_commercial_weights()
-
-    def get_weights_by_type(self, weight_type):
-        return self.weights_manifest.get(weight_type, [])
-
-    def write_supported_weights(self):
-        weight_lists = {
-            "Checkpoints": self.get_weights_by_type("CHECKPOINTS"),
-            "Upscale models": self.get_weights_by_type("UPSCALE_MODELS"),
-            "CLIP Vision": self.get_weights_by_type("CLIP_VISION"),
-            "LORAs": self.get_weights_by_type("LORAS"),
-            "Embeddings": self.get_weights_by_type("EMBEDDINGS"),
-            "IPAdapter": self.get_weights_by_type("IPADAPTER"),
-            "ControlNet": self.get_weights_by_type("CONTROLNET"),
-            "VAE": self.get_weights_by_type("VAE"),
-            "UNets": self.get_weights_by_type("UNET"),
-            "PhotoMaker": self.get_weights_by_type("PHOTOMAKER"),
-            "InstantID": self.get_weights_by_type("INSTANTID"),
-            "InsightFace": self.get_weights_by_type("INSIGHTFACE"),
-            "Ultralytics": self.get_weights_by_type("ULTRALYTICS"),
-            "Segment anything models (SAM)": self.get_weights_by_type("SAMS"),
-            "GroundingDino": self.get_weights_by_type("GROUNDING-DINO"),
-            "MMDets": self.get_weights_by_type("MMDETS"),
-            "Face restoration models": self.get_weights_by_type("FACERESTORE_MODELS"),
-            "Face detection models": self.get_weights_by_type("FACEDETECTION"),
-            "AnimateDiff": ComfyUI_AnimateDiff_Evolved.models(),
-            "AnimateDiff LORAs": ComfyUI_AnimateDiff_Evolved.loras(),
-            "ControlNet Preprocessors": sorted(
-                {
-                    f"{repo}/{filename}"
-                    for filename, repo in ComfyUI_Controlnet_Aux.models().items()
-                }
-            ),
-        }
-        with open("supported_weights.md", "w") as f:
-            for weight_type, weights in weight_lists.items():
-                f.write(f"## {weight_type}\n\n")
-                for weight in weights:
-                    f.write(f"- {weight}\n")
-                f.write("\n")

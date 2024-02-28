@@ -18,7 +18,9 @@ class Predictor(BasePredictor):
     def setup(self):
         self.comfyUI = ComfyUI("127.0.0.1:8188")
         self.comfyUI.start_server(OUTPUT_DIR, INPUT_DIR)
-        self.comfyUI.load_workflow(workflow_json, False)
+        self.comfyUI.load_workflow(
+            workflow_json, check_inputs=False
+        )
 
     def cleanup(self):
         self.comfyUI.clear_queue()
@@ -62,7 +64,6 @@ class Predictor(BasePredictor):
         load_image["image"] = kwargs["filename"]
 
         loader["cfg"] = kwargs["prompt_strength"]
-        loader["seed"] = kwargs["seed"]
         loader[
             "positive"
         ] = f"Sticker, {kwargs['prompt']}, cel shaded, svg, vector art, sharp"
@@ -79,7 +80,16 @@ class Predictor(BasePredictor):
 
         sampler["steps"] = kwargs["steps"]
         sampler["seed"] = kwargs["seed"]
-        upscaler["seed"] = kwargs["seed"]
+
+        if kwargs["upscale"]:
+            del workflow["5"]
+            del workflow["9"]
+            del workflow["10"]
+            upscaler["steps"] = kwargs["upscale_steps"]
+            upscaler["seed"] = kwargs["seed"]
+        else:
+            for node_id in range(11, 19):
+                workflow.pop(str(node_id), None)
 
     def predict(
         self,
@@ -117,7 +127,7 @@ class Predictor(BasePredictor):
             ge=0,
             le=1,
         ),
-        upscale: bool = Input(default=True, description="2x upscale the sticker"),
+        upscale: bool = Input(default=False, description="2x upscale the sticker"),
         upscale_steps: int = Input(
             default=10, description="Number of steps to upscale"
         ),
@@ -148,8 +158,9 @@ class Predictor(BasePredictor):
             ip_adapter_noise=ip_adapter_noise,
         )
 
+        wf = self.comfyUI.load_workflow(workflow, check_weights=False)
         self.comfyUI.connect()
-        self.comfyUI.run_workflow(workflow)
+        self.comfyUI.run_workflow(wf)
 
         files = []
         output_directories = [OUTPUT_DIR]

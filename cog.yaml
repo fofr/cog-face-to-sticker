@@ -21,37 +21,9 @@ build:
     - psutil
     - websocket-client==1.6.3
 
-    # was-node-suite-comfyui
-    # https://github.com/WASasquatch/was-node-suite-comfyui/blob/main/requirements.txt
-    - cmake
-    - imageio
-    - joblib
-    - matplotlib
-    - pilgram
-    - scikit-learn
-    # RemBG causes Tiny_TerraNodes to take >40s to start
-    # - rembg
-
-    # ComfyUI_essentials
-    - numba
-
-    # ComfyUI_FizzNodes
-    - pandas
-    - numexpr
-
     # comfyui-reactor-node
     - insightface
     - onnx
-
-    # ComfyUI-Impact-Pack
-    - segment-anything
-    - piexif
-
-    # ComfyUI-Impact-Subpack
-    - ultralytics!=8.0.177
-
-    # comfyui_segment_anything
-    - timm
 
     # comfyui_controlnet_aux
     # https://github.com/Fannovel16/comfyui_controlnet_aux/blob/main/requirements.txt
