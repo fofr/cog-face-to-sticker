@@ -70,8 +70,8 @@ class Predictor(BasePredictor):
         loader[
             "negative"
         ] = f"photo, photography, nsfw, nude, ugly, broken, watermark, oversaturated, soft {kwargs['negative_prompt']}"
-        loader["width"] = kwargs["width"]
-        loader["height"] = kwargs["height"]
+        loader["empty_latent_width"] = kwargs["width"]
+        loader["empty_latent_height"] = kwargs["height"]
 
         instant_id["weight"] = kwargs["instant_id_strength"]
 
