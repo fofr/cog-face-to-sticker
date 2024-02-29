@@ -3,9 +3,11 @@
 Turn any face into a sticker.
 
 Run this model on Replicate:
+
 https://replicate.com/fofr/face-to-sticker
 
 Or run it in ComfyUI:
+
 https://github.com/fofr/cog-face-to-sticker/blob/main/face-to-sticker-ui.json
 
 ![Arnold](https://replicate.delivery/pbxt/RZzqVdLsqSZgHtEefD00iMK8VuDif6iVmXlSbNeiAShPuHtJB/ComfyUI_00002_.png)
