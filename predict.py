@@ -109,20 +109,20 @@ class Predictor(BasePredictor):
             default=None, description="Fix the random seed for reproducibility"
         ),
         prompt_strength: float = Input(
-            default="7",
+            default=7,
             description="Strength of the prompt. This is the CFG scale, higher numbers lead to stronger prompt, lower numbers will keep more of a likeness to the original.",
         ),
         instant_id_strength: float = Input(
-            default="1", description="How strong the InstantID will be.", ge=0, le=1
+            default=1, description="How strong the InstantID will be.", ge=0, le=1
         ),
         ip_adapter_weight: float = Input(
-            default="0.2",
+            default=0.2,
             description="How much the IP adapter will influence the image",
             ge=0,
             le=1,
         ),
         ip_adapter_noise: float = Input(
-            default="0.5",
+            default=0.5,
             description="How much noise is added to the IP adapter input",
             ge=0,
             le=1,
