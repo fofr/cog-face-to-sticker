@@ -30,7 +30,7 @@ class Predictor(BasePredictor):
             os.makedirs(directory)
 
     def handle_input_file(self, input_file: Path):
-        file_extension = os.path.splitext(input_file)[1]
+        file_extension = os.path.splitext(input_file)[1].lower()
         if file_extension in [".jpg", ".jpeg", ".png", ".webp"]:
             filename = f"input{file_extension}"
             shutil.copy(input_file, os.path.join(INPUT_DIR, filename))
