@@ -10,6 +10,15 @@ Or run it in ComfyUI:
 
 https://github.com/fofr/cog-face-to-sticker/blob/main/face-to-sticker-ui.json
 
+You’ll need these custom nodes:
+
+- [ComfyUI BRIA AI RMBG](https://github.com/ZHO-ZHO-ZHO/ComfyUI-BRIA_AI-RMBG/tree/44a3f8f)
+- [ComfyUI Controlnet Aux](https://github.com/Fannovel16/comfyui_controlnet_aux/tree/6d6f63c)
+- [ComfyUI InstantID](https://github.com/cubiq/ComfyUI_InstantID/tree/0fcf494)
+- [ComfyUI IPAdapter Plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus/tree/
+- [ComfyUI UltimateSDUpscale](https://github.com/ssitu/
+- [Efficiency Nodes ComfyUI](https://github.com/jags111/efficiency-nodes-comfyui/tree/1ac5f18)
+
 ![Arnold](https://replicate.delivery/pbxt/RZzqVdLsqSZgHtEefD00iMK8VuDif6iVmXlSbNeiAShPuHtJB/ComfyUI_00002_.png)
 
 ## Developing locally
