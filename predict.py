@@ -134,6 +134,10 @@ class Predictor(BasePredictor):
     ) -> List[Path]:
         """Run a single prediction on the model"""
         self.cleanup()
+
+        if image is None:
+            raise ValueError("No image provided")
+
         filename = self.handle_input_file(image)
 
         if seed is None:
